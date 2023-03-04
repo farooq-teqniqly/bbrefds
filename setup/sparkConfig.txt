@@ -1,0 +1,1 @@
+spark.yarn.appMasterEnv.PYSPARK_DRIVER_PYTHON_OPTS --session-level-packages
