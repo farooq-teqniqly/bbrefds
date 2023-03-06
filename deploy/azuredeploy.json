@@ -9,7 +9,7 @@
         "description": "Location for your deployment."
       }
     },
-    "solutionName": {
+    "uniquePrefix": {
       "type": "string",
       "metadata": {
         "description": "A unique string prefix for Azure resources."
@@ -17,9 +17,9 @@
     }
   },
   "variables": {
-    "dlsName": "[toLower(concat(parameters('solutionName'), 'synapsedatalake'))]",
-    "dlsFsName": "[toLower(concat(parameters('solutionName'), 'synapsefilesystem'))]",
-    "workspaceName": "[toLower(concat(parameters('solutionName'), 'synapseworkspace'))]"
+    "dlsName": "[toLower(concat(parameters('uniquePrefix'), 'syndl'))]",
+    "dlsFsName": "[toLower(concat(parameters('uniquePrefix'), 'synfs'))]",
+    "workspaceName": "[toLower(concat(parameters('uniquePrefix'), 'synws'))]"
   },
   "resources": [
     {
