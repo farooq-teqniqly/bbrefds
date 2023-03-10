@@ -58,3 +58,36 @@ if (!$output) {
     az group delete --name $resourceGroupName --yes --no-wait
     exit 1
 }
+
+Write-Host "Uploading files..." -ForegroundColor Cyan
+
+$dataLakeName = az resource list `
+    --resource-group $resourceGroupName `
+    --resource-type Microsoft.Storage/storageAccounts `
+    --query [].name `
+    --output tsv
+
+$dataLakeAccountKey = az storage account keys list `
+    --account-name $dataLakeName `
+    --resource-group $resourceGroupName `
+    --query "[?keyName=='key1'].value" `
+    -o tsv
+
+$fileSystemName = az storage fs list `
+    --account-name $dataLakeName `
+    --account-key $dataLakeAccountKey `
+    --query "[].name" `
+    -o tsv
+
+$sourceFolderPath = Join-Path $PSScriptRoot -ChildPath "../" -AdditionalChildPath @("data")
+$dataLakeFolder = "data"
+
+az storage fs directory upload `
+    -f $fileSystemName `
+    --account-name $dataLakeName `
+    --account-key $dataLakeAccountKey `
+    --source $sourceFolderPath `
+    --destination-path $dataLakeFolder `
+    --recursive
+
+Write-Host "Upload complete" -ForegroundColor Cyan
