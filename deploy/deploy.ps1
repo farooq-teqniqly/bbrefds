@@ -44,7 +44,7 @@ Write-Host $resourceGroupName -ForegroundColor Cyan
 az account set --subscription $subscriptionId
 az group create --name $resourceGroupName --location $location
 
-$templateFileName = Join-Path -Path $PSScriptRoot -ChildPath "azuredeploy.json"
+$templateFileName = [IO.Path]::Combine($PSScriptRoot, "azuredeploy.json")
 
 $output = az deployment group create `
     --resource-group $resourceGroupName `
@@ -79,7 +79,7 @@ $fileSystemName = az storage fs list `
     --query "[].name" `
     -o tsv
 
-$sourceFolderPath = Join-Path $PSScriptRoot -ChildPath "../" -AdditionalChildPath @("data")
+$sourceFolderPath = [IO.Path]::Combine($PSScriptRoot, "../", "data/totals")
 $dataLakeFolder = "data"
 
 az storage fs directory upload `
@@ -91,3 +91,45 @@ az storage fs directory upload `
     --recursive
 
 Write-Host "Upload complete" -ForegroundColor Cyan
+
+Write-Host "Creating Spark pool" -ForegroundColor Cyan
+
+$poolName = "sparkPool01"
+
+$synapseWorkspaceName = az resource list `
+    --resource-group $resourceGroupName `
+    --resource-type Microsoft.Synapse/workspaces `
+    --query [].name `
+    --output tsv
+
+$sparkVersion = "3.3"
+$nodeCount = 3
+$nodeSize = "Small"
+$nodeSizeFamily = "MemoryOptimized"
+
+$sparkConfigFileName = [IO.Path]::Combine($PSScriptRoot, "sparkConfig.txt")
+
+az synapse spark pool create `
+    --name $poolName `
+    --workspace-name $synapseWorkspaceName `
+    --spark-version $sparkVersion `
+    --node-count $nodeCount `
+    --node-size $nodeSize `
+    --node-size-family $nodeSizeFamily `
+    --enable-auto-pause true `
+    --delay 15 `
+    --spark-config-file-path $sparkConfigFileName `
+    --resource-group $resourceGroupName `
+
+
+Write-Host "Spark pool created." -ForegroundColor Cyan
+
+Write-Host "Your Azure Synapse workspace url:" -ForegroundColor Cyan
+
+$workspaceUrl = az synapse workspace show `
+    --name $synapseWorkspaceName `
+    --resource-group $resourceGroupName `
+    --query "connectivityEndpoints.web" `
+    --output tsv
+
+Write-Host $workspaceUrl -ForegroundColor Yellow
