@@ -1,6 +1,12 @@
 <#
 .SYNOPSIS
-Uploads all CSV files in the specified folder to a folder in an Azure Data Lake using the Azure CLI.
+The deployment script creates the following resources:
+
+    - An Azure Synapse Workspace
+    - An Apache Spark pool in the Azure Synapse Workspace
+    - An Azure Data Lake Storage Account
+
+The script also uploads several CSV files to the Azure Data Lake.
 
 .PARAMETER location
 The location the Azure resources will be created in.
