@@ -2,14 +2,8 @@
 .SYNOPSIS
 Uploads all CSV files in the specified folder to a folder in an Azure Data Lake using the Azure CLI.
 
-.PARAMETER sourceFolderPath
-The local path of the folder containing the CSV files to be uploaded.
-
 .PARAMETER dataLakeName
 The name of the Azure Data Lake storage account.
-
-.PARAMETER dataLakeFolder
-The name of the folder in the Azure Data Lake where the CSV files will be uploaded.
 
 .PARAMETER fileSystemName
 The name of the file system in the Azure Data Lake where the CSV files will be uploaded.
@@ -22,13 +16,7 @@ The ID of the Azure subscription to use for the operation.
 #>
 Param (
     [Parameter(Mandatory = $true)]
-    [string]$sourceFolderPath,
-
-    [Parameter(Mandatory = $true)]
     [string]$dataLakeName,
-    
-    [Parameter(Mandatory = $true)]
-    [string]$dataLakeFolder,
 
     [Parameter(Mandatory = $true)]
     [string]$fileSystemName,
@@ -41,6 +29,9 @@ Param (
 )
 
 az account set --subscription $subscriptionId
+
+$sourceFolderPath = Join-Path $PSScriptRoot -ChildPath "../" -AdditionalChildPath @("data")
+$dataLakeFolder = "data"
 
 $dataLakeAccountKey = az storage account keys list `
     --account-name $dataLakeName `
