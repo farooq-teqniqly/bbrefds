@@ -65,13 +65,40 @@ if (!$output) {
     exit 1
 }
 
-Write-Host "Uploading files..." -ForegroundColor Cyan
+$synapseWorkspaceName = az resource list `
+    --resource-group $resourceGroupName `
+    --resource-type Microsoft.Synapse/workspaces `
+    --query [].name `
+    --output tsv
 
 $dataLakeName = az resource list `
     --resource-group $resourceGroupName `
     --resource-type Microsoft.Storage/storageAccounts `
     --query [].name `
     --output tsv
+
+Write-Host "Setting Azure Data Lake permissions..." -ForegroundColor Cyan
+
+$userName = ((az ad signed-in-user show) | ConvertFrom-JSON).UserPrincipalName
+
+$synapseWorkspaceId = az synapse workspace show `
+    --name $synapseWorkspaceName  `
+    --resource-group $resourceGroupName  `
+    --query identity.principalId -o tsv
+
+az role assignment create `
+    --assignee-object-id $synapseWorkspaceId `
+    --role "Storage Blob Data Owner" `
+    --scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Storage/storageAccounts/$dataLakeName"
+
+az role assignment create `
+    --assignee $userName `
+    --role "Storage Blob Data Owner" `
+    --scope "/subscriptions/$subscriptionId/resourceGroups/$resourceGroupName/providers/Microsoft.Storage/storageAccounts/$dataLakeName"
+
+Write-Host "Azure Data Lake permissions set." -ForegroundColor Cyan
+
+Write-Host "Uploading files..." -ForegroundColor Cyan
 
 $dataLakeAccountKey = az storage account keys list `
     --account-name $dataLakeName `
@@ -96,18 +123,21 @@ az storage fs directory upload `
     --destination-path $dataLakeFolder `
     --recursive
 
+$notebookFolderPath = [IO.Path]::Combine($PSScriptRoot, "../", "notebooks")
+$notebookFiles = Get-ChildItem $notebookFolderPath -Filter "*.ipynb"
+
+foreach ($notebookFile in $notebookFiles) {
+    az synapse notebook import `
+        --workspace-name $synapseWorkspaceName  `
+        --name $notebookFile.Name.Replace($notebookFile.Extension, "") `
+        --file "@$notebookFolderPath/$notebookFile"
+}
+
 Write-Host "Upload complete" -ForegroundColor Cyan
 
 Write-Host "Creating Spark pool" -ForegroundColor Cyan
 
 $poolName = "sparkPool01"
-
-$synapseWorkspaceName = az resource list `
-    --resource-group $resourceGroupName `
-    --resource-type Microsoft.Synapse/workspaces `
-    --query [].name `
-    --output tsv
-
 $sparkVersion = "3.3"
 $nodeCount = 3
 $nodeSize = "Small"
