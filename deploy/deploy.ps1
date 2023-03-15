@@ -149,6 +149,7 @@ az synapse spark pool create `
     --name $poolName `
     --workspace-name $synapseWorkspaceName `
     --spark-version $sparkVersion `
+    --enable-auto-scale false `
     --node-count $nodeCount `
     --node-size $nodeSize `
     --node-size-family $nodeSizeFamily `
